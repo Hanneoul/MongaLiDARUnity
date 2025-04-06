@@ -35,15 +35,17 @@ public class WallGenerator : MonoBehaviour
         {
             for (int x = 0; x < width; x++)
             {
+                
+
                 GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
                 quad.transform.parent = transform;
-                quad.transform.localPosition = new Vector3(x * quadSize, y * quadSize, 0);
+                quad.transform.localPosition = new Vector3((x - (width / 2.0f) + 0.5f) * quadSize, (y - (height / 2.0f) + 0.5f) * quadSize, 0);
                 quad.transform.localScale = new Vector3(quadSize, quadSize, 1);
 
                 // 체크무늬 색상 적용
                 Renderer renderer = quad.GetComponent<Renderer>();
-                renderer.material = new Material(Shader.Find("Unlit/Color"));
-                renderer.material.color = (x + y) % 2 == 0 ? Color.black : Color.white;
+                renderer.sharedMaterial = new Material(Shader.Find("Unlit/Color"));
+                renderer.sharedMaterial.color = (x + y) % 2 == 0 ? Color.black : Color.white;
             }
         }
     }
