@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json;
+//using System.Text.Json;
 using System.Threading.Tasks;
 using static DataStructure;
 
@@ -43,7 +43,7 @@ namespace LiDARAgentSys
                                         new List<LiDARAgentData> { filteredData }
                                     );
 
-                                    string jsonMessage = JsonSerializer.Serialize(message);
+                                    string jsonMessage = "";//JsonSerializer.Serialize(message);
                                     byte[] messageBytes = Encoding.UTF8.GetBytes(jsonMessage + "\n");
 
                                     try
