@@ -30,11 +30,9 @@ public class CheckBoardGenerator : MonoBehaviour
     public int xCount = 10; // 가로로 배치할 체크무늬의 개수
     public int yCount = 10; // 세로로 배치할 체크무늬의 개수
     public GameObject quadPrefab; // 체크무늬로 사용할 Quad 프리팹
-    public float spacing = 0f; // Quad 간의 간격 (기본값 0, 바로 붙게 설정)
-
+    
     [HideInInspector] public bool isGenerated = false; // 체크무늬가 생성되었는지 여부
 
-    // 버튼을 누르면 호출되는 메서드
     public void GenerateCheckBoard()
     {
         if (isGenerated) return; // 이미 생성되었으면 아무것도 하지 않음
@@ -45,12 +43,16 @@ public class CheckBoardGenerator : MonoBehaviour
         float orthoSize = cam.orthographicSize; // 카메라의 크기
 
         // 화면의 크기에 맞춰 Quad의 크기 계산
-        float quadWidth = (orthoSize * 2 * aspectRatio) / xCount;
-        float quadHeight = (orthoSize * 2) / yCount;
+        float screenWidth = orthoSize * 2 * aspectRatio; // 화면의 가로 크기
+        float screenHeight = orthoSize * 2; // 화면의 세로 크기
+
+        // Quad가 화면을 빈틈없이 채우도록 크기 계산
+        float quadWidth = screenWidth / xCount;  // Quad 가로 크기 계산
+        float quadHeight = screenHeight / yCount; // Quad 세로 크기 계산
 
         // Quad가 화면을 채우도록 중앙을 기준으로 시작 위치 계산
-        Vector3 startPosition = new Vector3(-(quadWidth * xCount) / 2 + quadWidth / 2,
-                                            (quadHeight * yCount) / 2 - quadHeight / 2,
+        Vector3 startPosition = new Vector3(-(screenWidth) / 2 + quadWidth / 2,
+                                            (screenHeight) / 2 - quadHeight / 2,
                                             0);
 
         // Quad 생성
@@ -58,11 +60,15 @@ public class CheckBoardGenerator : MonoBehaviour
         {
             for (int y = 0; y < yCount; y++)
             {
-                // 색상 결정: 짝수 위치는 흰색, 홀수 위치는 검정색
-                Color color = (x + y) % 2 == 0 ? Color.white : Color.black;
+                // 소수점 좌표를 기준으로 색상 계산
+                float normalizedX = (float)x / xCount;
+                float normalizedY = (float)y / yCount;
+
+                // 색상 계산: (x, y) 좌표를 기반으로 번갈아가며 색상 적용
+                Color color = ((int)(normalizedX * 100) + (int)(normalizedY * 100)) % 2 == 0 ? Color.white : Color.black;
 
                 // 새로운 Quad 인스턴스 생성
-                GameObject newQuad = Instantiate(quadPrefab, startPosition + new Vector3(x * (quadWidth + spacing), -y * (quadHeight + spacing), 0), Quaternion.identity);
+                GameObject newQuad = Instantiate(quadPrefab, startPosition + new Vector3(x * quadWidth, -y * quadHeight, 0), Quaternion.identity);
                 newQuad.transform.SetParent(transform); // CheckBG의 자식으로 설정
 
                 // 색상 적용

@@ -26,7 +26,7 @@ public class LiDARManager : MonoBehaviour
         // 비동기 방식으로 실행
         var sensorTask = sensor.CollectData();
         var filterTask = filter.ProcessData();
-        var senderTask = DataSender.SendDataAsync();
+        //var senderTask = DataSender.SendDataAsync();
 
         Debug.Log("종료하려면 ESC를 누르세요.");
         while (!Console.KeyAvailable || Console.ReadKey(true).Key != ConsoleKey.Escape)
