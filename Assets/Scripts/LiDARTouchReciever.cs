@@ -1,19 +1,35 @@
-using UnityEngine;
 using MongaLiDAR;
+using UnityEngine;
 
-public class LiDARTouchReciever : MonoBehaviour, ITouchInputHandler
+public class LiDARTouchReceiver : MonoBehaviour, ITouchInputHandler
 {
-    // 터치 시작 이벤트
-    public void OnTouchStart(Vector2 screenCoord)
+    // 싱글턴 인스턴스
+    public static LiDARTouchReceiver Instance { get; private set; }
+
+    private void Awake()
     {
-        Debug.Log("Touch started at: " + screenCoord);
-        // 여기서 터치 시작 시의 행동을 정의
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject); // 씬 전환 시에도 싱글턴 유지
+        }
+        else
+        {
+            Destroy(gameObject); // 이미 싱글턴이 존재하면 다른 오브젝트 삭제
+        }
+    }
+
+    // 터치 시작 이벤트
+    public void OnTouchStart(Vector2 screenCoord, int lidarId)
+    {
+        Debug.Log($"Touch started at: {screenCoord} from LiDAR {lidarId}");
+        // 터치 시작 시의 행동을 정의 (예: 오브젝트 클릭, UI 업데이트 등)
     }
 
     // 터치 종료 이벤트
-    public void OnTouchEnd(Vector2 screenCoord)
+    public void OnTouchEnd(Vector2 screenCoord, int lidarId)
     {
-        Debug.Log("Touch ended at: " + screenCoord);
-        // 여기서 터치 종료 시의 행동을 정의
+        Debug.Log($"Touch ended at: {screenCoord} from LiDAR {lidarId}");
+        // 터치 종료 시의 행동을 정의 (예: 오브젝트 상호작용 종료 등)
     }
 }
