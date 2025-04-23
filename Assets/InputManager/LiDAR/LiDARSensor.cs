@@ -69,7 +69,6 @@ namespace LiDARAgentSys
                         await WriteCommand(stream, SCIP_Writer.MD(0, maxIndex));
                         receiveData = await ReadLine(stream);
 
-
                         List<long> distances = new List<long>();
                         long unusedTimeStamp = 0;
 

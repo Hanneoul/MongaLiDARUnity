@@ -4,22 +4,6 @@ using UnityEngine;
 public class DataStructure
 {
 
-    public class Vector2
-    {
-        public float x { get; set; }
-        public float y { get; set; }
-
-        public Vector2(float X, float Y)
-        {
-            x = X;
-            y = Y;
-        }
-
-        public override string ToString()
-        {
-            return $"x: {x}, y: {y}";
-        }
-    }
 
     // 라이다 센서에서 개별 측정 데이터를 저장하는 클래스
     public class LiDARMeasurement
