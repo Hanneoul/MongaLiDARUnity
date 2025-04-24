@@ -2,26 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using LiDARAgentSys;
 using SCIP_library;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using static DataStructure;
+using MongaLiDAR;
 //using static Unity.VisualScripting.Round<TInput, TOutput>;
 
 namespace MongaLiDAR
 {
-   
 
-    public class LiDARManager : MonoBehaviour
+    public class LiDARTouchManager : MonoBehaviour
     {
         //LiDAR 정보
         public int lidarId = 0;           // 각 LiDAR의 고유 ID (사용자가 정함)
         public string lidarIP = "192.168.0.10";
         public int lidarPort = 10940;
 
-        int startIndex = 200;                     //LiDAR 감지 시작 각도 (배열인덱스)
+        public int startIndex = 200;                     //LiDAR 감지 시작 각도 (배열인덱스)
         private int endIndex = 400;               //LiDAR 감지 끝 각도 (배열인덱스)
         private int maxIndex = 1080;              //최대각
         public double scanAngle = 270.0;
@@ -46,14 +45,59 @@ namespace MongaLiDAR
 
         
         //네트웍 전용
-        public TcpClient client;
-        public NetworkStream stream;
+        private TcpClient tcpClient;
+        private NetworkStream stream;
+        private CancellationTokenSource cancellationTokenSource;        //중지 토큰
 
-        private async void Start()
+
+
+        // JSON으로 저장하기
+        public void SaveData()
         {
-            //// LiDAR 연결 후 데이터 처리 (예시로 LiDAR 데이터를 처리)
-            //Vector2 screenCoord = ConvertLiDARDataToScreenCoordinates(10f, 45f, 0f); // 예시: 10m 거리, 45도 각도에서 터치 이벤트 처리
+            LiDARInitData lidarData = new LiDARInitData();
 
+            lidarData.Lidar_id = lidarId;
+            lidarData.lidar_ip = lidarIP;
+            lidarData.lidar_port = lidarPort;
+
+            lidarData.startIndex = startIndex;
+            lidarData.scanAngle = scanAngle;
+
+            string json = JsonUtility.ToJson(lidarData);
+            System.IO.File.WriteAllText(Application.dataPath + "/lidar_data.json", json);
+            Debug.Log("Data saved to JSON: " + json);
+        }
+
+        // JSON에서 데이터 불러오기
+        public void LoadData()
+        {
+            if (System.IO.File.Exists(Application.dataPath + "/lidar_data.json"))
+            {
+                LiDARInitData lidarData = new LiDARInitData();
+
+                string json = System.IO.File.ReadAllText(Application.dataPath + "/lidar_data.json");
+                lidarData = JsonUtility.FromJson<LiDARInitData>(json);
+                Debug.Log("Data loaded from JSON: " + json);
+
+                lidarId = lidarData.Lidar_id;
+                lidarIP = lidarData.lidar_ip;
+                lidarPort = lidarData.lidar_port;
+
+                startIndex = lidarData.startIndex;
+                scanAngle = lidarData.scanAngle;
+            }
+            else
+            {
+                Debug.Log("No saved data found!");
+            }
+        }
+
+
+
+
+        void Start()
+        {
+            LoadData(); // 데이터 불러오기
 
             // LiDARTouchReceiver가 제대로 연결되었는지 확인
             touchReceiver = LiDARTouchReceiver.Instance;
@@ -69,106 +113,323 @@ namespace MongaLiDAR
 
             Debug.Log($"설정된 인덱스 범위: " + startIndex.ToString() + " ~ " + endIndex.ToString());
 
+            // TCP 연결을 비동기로 시도
+            StartConnectionAsync();
+        }
 
+        // 비동기 방식으로 LiDAR에 접속 시도
+        private async void StartConnectionAsync()
+        {
+            cancellationTokenSource = new CancellationTokenSource();
+            CancellationToken token = cancellationTokenSource.Token;
+
+            while (!token.IsCancellationRequested)
+            {
+
+                try
+                {
+                    if (await TryConnectAsync(token))
+                    {
+                        Debug.Log("LiDAR 접속 성공!");
+                        await ReceiveDataLoopAsync(token);
+                        break; // 연결 후 데이터 수신 루프 시작
+                    }
+                    else
+                    {
+                        Debug.Log("LiDAR 접속 실패, 5초 후 재시도...");
+                        await Task.Delay(5000, token); // 접속 실패 시 5초 대기 후 재시도
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"오류 발생: {ex.Message}");
+                    await Task.Delay(5000, token); // 오류 발생 시 재시도
+                }
+            }
+        }
+
+        // 비동기 TCP 접속 시도
+        private async Task<bool> TryConnectAsync(CancellationToken token)
+        {
             try
             {
-                using (TcpClient urg = new TcpClient(lidarIP, lidarPort))
-                using (NetworkStream stream = urg.GetStream())
+                tcpClient = new TcpClient();
+                var connectTask = tcpClient.ConnectAsync(lidarIP, lidarPort);
+                if (await Task.WhenAny(connectTask, Task.Delay(10000, token)) == connectTask) // 10초 타임아웃
                 {
-                    isRunning = true;
-                    await WriteCommand(stream, SCIP_Writer.SCIP2());
-                    string receiveData = await ReadLine(stream);
-
-
-                    while (isRunning)
+                    if (tcpClient.Connected)
                     {
-                        await WriteCommand(stream, SCIP_Writer.MD(0, maxIndex));
-                        receiveData = await ReadLine(stream);
+                        stream = tcpClient.GetStream();
+                        return true;
+                    }
+                }
+                Debug.LogError("접속 시간 초과");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"접속 오류: {ex.Message}");
+                return false;
+            }
+            
+        }
 
-                        List<long> distances = new List<long>();
-                        long unusedTimeStamp = 0;
 
-                        receiveData = await ReadLine(stream);
-                        if (string.IsNullOrEmpty(receiveData) || !SCIP_Reader.MD(receiveData, ref unusedTimeStamp, ref distances))
+        // LiDAR 데이터 수신 루프
+        private async Task ReceiveDataLoopAsync(CancellationToken token)
+        {
+            try
+            {
+                while (!token.IsCancellationRequested && isRunning)
+                {
+                    await WriteCommandAsync(SCIP_Writer.SCIP2());
+
+                    string receiveData = await ReadLineAsync();
+                    if (string.IsNullOrEmpty(receiveData))
+                    {
+                        Debug.LogError("데이터 수신 실패");
+                        await Task.Delay(50, token); // 데이터 수신 실패 시 50ms 대기 후 재시도
+                        continue;
+                    }
+
+                    List<long> distances = new List<long>();
+                    long unusedTimeStamp = 0;
+
+                    receiveData = await ReadLineAsync();
+                    if (string.IsNullOrEmpty(receiveData) || !SCIP_Reader.MD(receiveData, ref unusedTimeStamp, ref distances))
+                    {
+                        Debug.LogError("데이터 패킷 오류");
+                        await Task.Delay(50, token); // 패킷 오류 시 재시도
+                        continue;
+                    }
+
+                    string timeStamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+                    Debug.Log($"[디버그] 데이터 수신됨, 거리값 개수: {distances.Count}");
+
+                    if (distances.Count > 0)
+                    {
+                        int adjustedEndIndex = Math.Min(endIndex, distances.Count - 1);
+                        List<LiDARMeasurement> measurements = new List<LiDARMeasurement>();
+
+                        for (int i = startIndex; i <= adjustedEndIndex; i++)
                         {
-                            Debug.LogError("데이터 수신 실패 (패킷 오류 또는 데이터 없음)");
-                            await Task.Delay(50);
-                            continue;
+                            double angle = (i / (double)maxIndex) * scanAngle;
+                            measurements.Add(new LiDARMeasurement(angle, distances[i]));
                         }
 
-                        string timeStamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
-                        Debug.Log($"[디버그] 데이터 수신됨, 거리값 개수: {distances.Count}");
-
-                        if (distances.Count > 0)
-                        {
-                            int adjustedEndIndex = Math.Min(endIndex, distances.Count - 1);
-                            List<LiDARMeasurement> measurements = new List<LiDARMeasurement>();
-
-                            for (int i = startIndex; i <= adjustedEndIndex; i++)
-                            {
-                                double angle = (i / (double)maxIndex) * scanAngle;
-                                measurements.Add(new LiDARMeasurement(angle, distances[i]));
-                            }
-
-                            Debug.Log($"[디버그] 원본 데이터 필터에 전달됨, 타임스탬프: {timeStamp}, 데이터 개수: {measurements.Count}");
-                            DataQueue.EnqueueRawData(new LiDARAgentData(long.Parse(timeStamp), measurements));
-                        }
+                        Debug.Log($"[디버그] 원본 데이터 필터에 전달됨, 타임스탬프: {timeStamp}, 데이터 개수: {measurements.Count}");
+                        DataQueue.EnqueueRawData(new LiDARAgentData(long.Parse(timeStamp), measurements));
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError($"오류 발생: {ex.Message}");
+                Debug.LogError($"데이터 수신 오류: {ex.Message}");
             }
+            finally
+            {
+                // 연결 종료 시 자원 해제
+                CleanupConnection();
+            }
+        }
+
+        // TCP 명령어를 비동기적으로 스트림에 쓰기
+        private async Task WriteCommandAsync(string data)
+        {
+            if (stream?.CanWrite == true)
+            {
+                byte[] buffer = Encoding.ASCII.GetBytes(data);
+                await stream.WriteAsync(buffer, 0, buffer.Length);
+            }
+        }
+
+        // 네트워크 스트림에서 한 줄을 비동기적으로 읽기
+        private async Task<string> ReadLineAsync()
+        {
+            if (stream?.CanRead == true)
+            {
+                StringBuilder sb = new StringBuilder();
+                bool isNL2 = false;
+                bool isNL = false;
+                byte[] buffer = new byte[1];
+
+                try
+                {
+                    do
+                    {
+                        int byteRead = await stream.ReadAsync(buffer, 0, 1);
+                        if (byteRead == 0) break; // 연결 끊어짐
+
+                        char receivedChar = (char)buffer[0];
+
+                        if (receivedChar == '\n')
+                        {
+                            if (isNL) isNL2 = true;
+                            else isNL = true;
+                        }
+                        else isNL = false;
+
+                        sb.Append(receivedChar);
+                    } while (!isNL2);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"데이터 읽기 오류: {ex.Message}");
+                    return null;
+                }
+
+                return sb.ToString();
+            }
+            return null;
+        }
+
+        // 연결 종료 및 리소스 정리
+        private void CleanupConnection()
+        {
+            stream?.Close();
+            tcpClient?.Close();
+            stream?.Dispose();
+            tcpClient?.Dispose();
+        }
+
+        // 애플리케이션 종료 시 연결 종료
+        private void OnApplicationQuit()
+        {
+            cancellationTokenSource?.Cancel(); // 작업 취소
+            CleanupConnection();
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
+
+
+
+
+        //private async void Start()
+        //{
+        //    //// LiDAR 연결 후 데이터 처리 (예시로 LiDAR 데이터를 처리)
+        //    //Vector2 screenCoord = ConvertLiDARDataToScreenCoordinates(10f, 45f, 0f); // 예시: 10m 거리, 45도 각도에서 터치 이벤트 처리
+
+
+            
+
+
+        //    try
+        //    {
+        //        using (TcpClient urg = new TcpClient(lidarIP, lidarPort))
+        //        using (NetworkStream stream = urg.GetStream())
+        //        {
+        //            isRunning = true;
+        //            await WriteCommand(stream, SCIP_Writer.SCIP2());
+        //            string receiveData = await ReadLine(stream);
+
+
+        //            while (isRunning)
+        //            {
+        //                await WriteCommand(stream, SCIP_Writer.MD(0, maxIndex));
+        //                receiveData = await ReadLine(stream);
+
+        //                List<long> distances = new List<long>();
+        //                long unusedTimeStamp = 0;
+
+        //                receiveData = await ReadLine(stream);
+        //                if (string.IsNullOrEmpty(receiveData) || !SCIP_Reader.MD(receiveData, ref unusedTimeStamp, ref distances))
+        //                {
+        //                    Debug.LogError("데이터 수신 실패 (패킷 오류 또는 데이터 없음)");
+        //                    await Task.Delay(50);
+        //                    continue;
+        //                }
+
+        //                string timeStamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+        //                Debug.Log($"[디버그] 데이터 수신됨, 거리값 개수: {distances.Count}");
+
+        //                if (distances.Count > 0)
+        //                {
+        //                    int adjustedEndIndex = Math.Min(endIndex, distances.Count - 1);
+        //                    List<LiDARMeasurement> measurements = new List<LiDARMeasurement>();
+
+        //                    for (int i = startIndex; i <= adjustedEndIndex; i++)
+        //                    {
+        //                        double angle = (i / (double)maxIndex) * scanAngle;
+        //                        measurements.Add(new LiDARMeasurement(angle, distances[i]));
+        //                    }
+
+        //                    Debug.Log($"[디버그] 원본 데이터 필터에 전달됨, 타임스탬프: {timeStamp}, 데이터 개수: {measurements.Count}");
+        //                    DataQueue.EnqueueRawData(new LiDARAgentData(long.Parse(timeStamp), measurements));
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.LogError($"오류 발생: {ex.Message}");
+        //    }
 
 
 
             
-        }
+        //}
 
-        private async Task WriteCommand(NetworkStream stream, string data)
-        {
-            if (!stream.CanWrite) return;
-            byte[] buffer = Encoding.ASCII.GetBytes(data);
-            await stream.WriteAsync(buffer, 0, buffer.Length);
-        }
+        //private async Task WriteCommand(NetworkStream stream, string data)
+        //{
+        //    if (!stream.CanWrite) return;
+        //    byte[] buffer = Encoding.ASCII.GetBytes(data);
+        //    await stream.WriteAsync(buffer, 0, buffer.Length);
+        //}
 
-        static async Task<string> ReadLine(NetworkStream stream)
-        {
-            if (!stream.CanRead) return null;
+        //static async Task<string> ReadLine(NetworkStream stream)
+        //{
+        //    if (!stream.CanRead) return null;
 
-            StringBuilder sb = new StringBuilder();
-            bool isNL2 = false;
-            bool isNL = false;
-            byte[] buffer = new byte[1];
+        //    StringBuilder sb = new StringBuilder();
+        //    bool isNL2 = false;
+        //    bool isNL = false;
+        //    byte[] buffer = new byte[1];
 
-            try
-            {
-                do
-                {
-                    int byteRead = await stream.ReadAsync(buffer, 0, 1);
-                    if (byteRead == 0) break; // 연결이 끊어진 경우
+        //    try
+        //    {
+        //        do
+        //        {
+        //            int byteRead = await stream.ReadAsync(buffer, 0, 1);
+        //            if (byteRead == 0) break; // 연결이 끊어진 경우
 
-                    char receivedChar = (char)buffer[0];
+        //            char receivedChar = (char)buffer[0];
 
-                    if (receivedChar == '\n')
-                    {
-                        if (isNL) isNL2 = true;
-                        else isNL = true;
-                    }
-                    else isNL = false;
+        //            if (receivedChar == '\n')
+        //            {
+        //                if (isNL) isNL2 = true;
+        //                else isNL = true;
+        //            }
+        //            else isNL = false;
 
-                    sb.Append(receivedChar);
-                } while (!isNL2);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"데이터 읽기 오류: {ex.Message}");
-                return null;
-            }
+        //            sb.Append(receivedChar);
+        //        } while (!isNL2);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"데이터 읽기 오류: {ex.Message}");
+        //        return null;
+        //    }
 
-            return sb.ToString();
-        }
+        //    return sb.ToString();
+        //}
 
 
 

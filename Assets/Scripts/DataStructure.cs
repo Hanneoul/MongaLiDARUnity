@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DataStructure
+namespace MongaLiDAR
 {
+
 
 
     // 라이다 센서에서 개별 측정 데이터를 저장하는 클래스
@@ -60,4 +61,5 @@ public class DataStructure
 
         }
     }
+
 }
