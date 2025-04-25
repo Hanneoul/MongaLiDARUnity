@@ -195,10 +195,15 @@ namespace MongaLiDAR
                     if (tcpClient.Connected)
                     {
                         stream = tcpClient.GetStream();
+                        Debug.Log("stream get success!");
                         return true;
                     }
                 }
-                Debug.LogError("접속 시간 초과");
+                else
+                {
+                    Debug.LogError("접속 시간 초과");
+                }
+                
                 return false;
             }
             catch (Exception ex)
@@ -227,6 +232,8 @@ namespace MongaLiDAR
                     long unusedTimeStamp = 0;
 
                     receiveData = await ReadLineAsync();
+                    Debug.Log("dmdkdkdkdkdk");
+
                     if (string.IsNullOrEmpty(receiveData) || !SCIP_Reader.MD(receiveData, ref unusedTimeStamp, ref distances))
                     {
                         Debug.LogError("데이터 수신 실패 패킷 오류 or 데이터 없음");
