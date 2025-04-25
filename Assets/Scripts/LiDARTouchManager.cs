@@ -13,6 +13,12 @@ namespace MongaLiDAR
 
     public class LiDARTouchManager : MonoBehaviour
     {
+        // LiDAR 터치와 매핑에 필요한 오브젝트 
+        public Camera lidarCamera;  // 카메라 객체 (하나만 사용)
+        public LiDARTouchReceiver touchReceiver;  // LiDAR 리시버 참조
+
+
+        public string settingFilename = "lidar_data01.json";
         //LiDAR 정보
         public int lidarId = 0;           // 각 LiDAR의 고유 ID (사용자가 정함)
         public string lidarIP = "192.168.0.10";
@@ -23,8 +29,8 @@ namespace MongaLiDAR
         private int maxIndex = 1080;              //최대각
         public double scanAngle = 270.0;
 
-        public string settingFilename = "lidar_data01.json";
-        public string filterFilename = "lidar_filter_data01.json";
+        
+        
 
         private bool isRunning = false;               // 라이다 동작여부
 
@@ -40,10 +46,6 @@ namespace MongaLiDAR
         //               / |
         //       Roll   V  
 
-        // LiDAR 터치와 매핑에 필요한 오브젝트 
-        public Camera lidarCamera;  // 카메라 객체 (하나만 사용)
-        public LiDARTouchReceiver touchReceiver;  // LiDAR 리시버 참조
-
         
         //네트웍 전용
         private TcpClient tcpClient;
@@ -53,7 +55,7 @@ namespace MongaLiDAR
         //데이터큐
         private DataQueue dataQueue;
 
-
+        public string filterFilename = "lidar_filter_data01.json";
 
         void Stop()
         {
