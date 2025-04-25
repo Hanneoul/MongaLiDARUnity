@@ -119,6 +119,83 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &85867096
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 85867098}
+  - component: {fileID: 85867097}
+  m_Layer: 0
+  m_Name: TestNewLiDARManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &85867097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85867096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 307b3ffa9488c41619dec48bc346675c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lidarCamera: {fileID: 1856545284}
+  touchReceiver: {fileID: 887521896}
+  lidar_id: 0
+  ip_address: 192.168.0.10
+  port_number: 10940
+  distanceCroppingMethod: 1
+  detectRectWidth: 0
+  detectRectHeight: 0
+  maxDetectionDist: 7000
+  smoothDistanceCurve: 0
+  smoothDistanceByTime: 0
+  timeSmoothBreakingDistanceChange: 200
+  smoothKernelSize: 21
+  timeSmoothFactor: 0.01
+  noiseLimit: 7
+  deltaLimit: 200
+  detectedObjects: []
+  distanceThresholdForMerge: 300
+  objectPositionSmoothTime: 0.2
+  positionOffset: {x: 0, y: 0}
+  useOffset: 1
+  debugDrawDistance: 0
+  drawObjectRays: 1
+  drawObjectCenterRay: 1
+  drawObject: 1
+  drawProcessedObject: 1
+  drawRunningLine: 1
+  showHardwareControlButtons: 0
+  recalculateConstrainAreaEveryFrame: 0
+  distanceColor: {r: 1, g: 1, b: 1, a: 1}
+  strengthColor: {r: 1, g: 0, b: 0, a: 1}
+  objectColor: {r: 0, g: 1, b: 0, a: 1}
+  processedObjectColor: {r: 0, g: 1, b: 1, a: 1}
+--- !u!4 &85867098
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85867096}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &134257291
 GameObject:
   m_ObjectHideFlags: 0
@@ -247,7 +324,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!1 &803092032
+--- !u!1 &887521895
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -255,48 +332,37 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 803092034}
-  - component: {fileID: 803092033}
+  - component: {fileID: 887521897}
+  - component: {fileID: 887521896}
   m_Layer: 0
-  m_Name: LiDARManager
+  m_Name: ReceverObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &803092033
+--- !u!114 &887521896
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 803092032}
+  m_GameObject: {fileID: 887521895}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e9967fae3176c1e44a6ad7950978ed84, type: 3}
+  m_Script: {fileID: 11500000, guid: 357e066e2b8340344af3693bad807ecb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lidarCamera: {fileID: 0}
-  touchReceiver: {fileID: 0}
-  settingFilename: lidar_data01.json
-  lidarId: 0
-  lidarIP: 192.168.0.10
-  lidarPort: 10940
-  startIndex: 200
-  scanAngle: 270
-  filterFilename: lidar_filter_data01.json
-  filter_calibrationSamples: 100
-  filter_threshold: 80
---- !u!4 &803092034
+--- !u!4 &887521897
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 803092032}
+  m_GameObject: {fileID: 887521895}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0.3322232, y: 32.499504, z: 1.2480681}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -347,7 +413,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1378063274
+--- !u!1 &1856545282
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -355,37 +421,85 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1378063276}
-  - component: {fileID: 1378063275}
+  - component: {fileID: 1856545285}
+  - component: {fileID: 1856545284}
+  - component: {fileID: 1856545283}
   m_Layer: 0
-  m_Name: LiDARReciever
+  m_Name: Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1378063275
-MonoBehaviour:
+--- !u!81 &1856545283
+AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378063274}
+  m_GameObject: {fileID: 1856545282}
   m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 357e066e2b8340344af3693bad807ecb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &1378063276
+--- !u!20 &1856545284
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1856545282}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 1
+  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!4 &1856545285
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378063274}
+  m_GameObject: {fileID: 1856545282}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -397,6 +511,7 @@ SceneRoots:
   m_Roots:
   - {fileID: 309344525}
   - {fileID: 1063157477}
-  - {fileID: 803092034}
-  - {fileID: 1378063276}
   - {fileID: 134257292}
+  - {fileID: 85867098}
+  - {fileID: 1856545285}
+  - {fileID: 887521897}
