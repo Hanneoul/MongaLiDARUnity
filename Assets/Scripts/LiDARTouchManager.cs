@@ -215,17 +215,13 @@ namespace MongaLiDAR
         {
             try
             {
+                await WriteCommandAsync(SCIP_Writer.SCIP2());
+                string receiveData = await ReadLineAsync();
+                
                 while (!token.IsCancellationRequested && isRunning)
                 {
-                    await WriteCommandAsync(SCIP_Writer.SCIP2());
-
-                    string receiveData = await ReadLineAsync();
-                    if (string.IsNullOrEmpty(receiveData))
-                    {
-                        Debug.LogError("데이터 수신 실패");
-                        await Task.Delay(50, token); // 데이터 수신 실패 시 50ms 대기 후 재시도
-                        continue;
-                    }
+                    await WriteCommandAsync(SCIP_Writer.MD(0, maxIndex));
+                    receiveData = await ReadLineAsync();
 
                     List<long> distances = new List<long>();
                     long unusedTimeStamp = 0;
@@ -233,7 +229,7 @@ namespace MongaLiDAR
                     receiveData = await ReadLineAsync();
                     if (string.IsNullOrEmpty(receiveData) || !SCIP_Reader.MD(receiveData, ref unusedTimeStamp, ref distances))
                     {
-                        Debug.LogError("데이터 패킷 오류");
+                        Debug.LogError("데이터 수신 실패 패킷 오류 or 데이터 없음");
                         await Task.Delay(50, token); // 패킷 오류 시 재시도
                         continue;
                     }
