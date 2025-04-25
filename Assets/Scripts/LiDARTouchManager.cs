@@ -85,7 +85,25 @@ namespace MongaLiDAR
 
             FilteringProcess();
         }
+        private void Update()
+        {
+            // filteredData가 있는지 확인
+            if (dataQueue.HasFilteredData())
+            {
+                // filteredData를 꺼내옴
+                LiDARAgentData filteredData = dataQueue.DequeueFilteredData();
 
+                // filteredData에 값이 있으면 LiDARTouchReceiver의 터치 이벤트 호출
+                foreach (var measurement in filteredData.measurements)
+                {
+                    // 터치 시작 이벤트 호출
+                    LiDARTouchReceiver.Instance.OnTouchStart(new Vector2((float)measurement.angle, (float)measurement.distance), lidarId);
+
+                    // 터치 종료 이벤트 호출 (예시로 바로 종료 처리, 실제로는 상황에 맞게 변경)
+                    //LiDARTouchReceiver.Instance.OnTouchEnd(new Vector2((float)measurement.angle, (float)measurement.distance), lidarId);
+                }
+            }
+        }
 
 
 
