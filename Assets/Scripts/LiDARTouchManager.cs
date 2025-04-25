@@ -15,7 +15,7 @@ namespace MongaLiDAR
     {
         // LiDAR 터치와 매핑에 필요한 오브젝트 
         public Camera lidarCamera;  // 카메라 객체 (하나만 사용)
-        public LiDARTouchReceiver touchReceiver;  // LiDAR 리시버 참조
+        public ITouchInputHandler touchReceiver;  // LiDAR 리시버 참조
 
 
         public string settingFilename = "lidar_data01.json";
@@ -65,6 +65,8 @@ namespace MongaLiDAR
 
         void Start()
         {
+            dataQueue = new DataQueue(); // LiDARTouchManager는 자신만의 DataQueue를 가짐
+
             LoadData(); // 데이터 불러오기
 
             // LiDARTouchReceiver가 제대로 연결되었는지 확인
@@ -112,8 +114,6 @@ namespace MongaLiDAR
         // JSON으로 저장하기
         public void SaveData()
         {
-            dataQueue = new DataQueue(); // LiDARTouchManager는 자신만의 DataQueue를 가짐
-
             LiDARInitData lidarData = new LiDARInitData();
 
             lidarData.Lidar_id = lidarId;
@@ -356,8 +356,6 @@ namespace MongaLiDAR
         // JSON으로 저장하기
         public void SaveFilterData()
         {
-            dataQueue = new DataQueue(); // LiDARTouchManager는 자신만의 DataQueue를 가짐
-
             LiDARFilterData lidarFilterData = new LiDARFilterData();
 
             lidarFilterData.filter_calibrationSamples = filter_calibrationSamples;
