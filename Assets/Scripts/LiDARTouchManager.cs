@@ -4,11 +4,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using LiDARAgentSys;
 using SCIP_library;
 using UnityEngine;
-using MongaLiDAR;
-//using static Unity.VisualScripting.Round<TInput, TOutput>;
+using System.Linq;
 
 namespace MongaLiDAR
 {
@@ -24,6 +22,9 @@ namespace MongaLiDAR
         private int endIndex = 400;               //LiDAR 감지 끝 각도 (배열인덱스)
         private int maxIndex = 1080;              //최대각
         public double scanAngle = 270.0;
+
+        public string settingFilename = "lidar_data01.json";
+        public string filterFilename = "lidar_filter_data01.json";
 
         private bool isRunning = false;               // 라이다 동작여부
 
@@ -49,50 +50,15 @@ namespace MongaLiDAR
         private NetworkStream stream;
         private CancellationTokenSource cancellationTokenSource;        //중지 토큰
 
+        //데이터큐
+        private DataQueue dataQueue;
 
 
-        // JSON으로 저장하기
-        public void SaveData()
+
+        void Stop()
         {
-            LiDARInitData lidarData = new LiDARInitData();
-
-            lidarData.Lidar_id = lidarId;
-            lidarData.lidar_ip = lidarIP;
-            lidarData.lidar_port = lidarPort;
-
-            lidarData.startIndex = startIndex;
-            lidarData.scanAngle = scanAngle;
-
-            string json = JsonUtility.ToJson(lidarData);
-            System.IO.File.WriteAllText(Application.dataPath + "/lidar_data.json", json);
-            Debug.Log("Data saved to JSON: " + json);
+            isRunning = false;
         }
-
-        // JSON에서 데이터 불러오기
-        public void LoadData()
-        {
-            if (System.IO.File.Exists(Application.dataPath + "/lidar_data.json"))
-            {
-                LiDARInitData lidarData = new LiDARInitData();
-
-                string json = System.IO.File.ReadAllText(Application.dataPath + "/lidar_data.json");
-                lidarData = JsonUtility.FromJson<LiDARInitData>(json);
-                Debug.Log("Data loaded from JSON: " + json);
-
-                lidarId = lidarData.Lidar_id;
-                lidarIP = lidarData.lidar_ip;
-                lidarPort = lidarData.lidar_port;
-
-                startIndex = lidarData.startIndex;
-                scanAngle = lidarData.scanAngle;
-            }
-            else
-            {
-                Debug.Log("No saved data found!");
-            }
-        }
-
-
 
 
         void Start()
@@ -115,6 +81,55 @@ namespace MongaLiDAR
 
             // TCP 연결을 비동기로 시도
             StartConnectionAsync();
+            isRunning = true;
+
+            FilteringProcess();
+        }
+
+
+
+
+        // JSON으로 저장하기
+        public void SaveData()
+        {
+            dataQueue = new DataQueue(); // LiDARTouchManager는 자신만의 DataQueue를 가짐
+
+            LiDARInitData lidarData = new LiDARInitData();
+
+            lidarData.Lidar_id = lidarId;
+            lidarData.lidar_ip = lidarIP;
+            lidarData.lidar_port = lidarPort;
+
+            lidarData.startIndex = startIndex;
+            lidarData.scanAngle = scanAngle;
+
+            string json = JsonUtility.ToJson(lidarData);
+            System.IO.File.WriteAllText(Application.dataPath + "/" + settingFilename, json);
+            Debug.Log("Data saved to JSON: " + json);
+        }
+
+        // JSON에서 데이터 불러오기
+        public void LoadData()
+        {
+            if (System.IO.File.Exists(Application.dataPath + "/" + settingFilename))
+            {
+                LiDARInitData lidarData = new LiDARInitData();
+
+                string json = System.IO.File.ReadAllText(Application.dataPath + "/" + settingFilename);
+                lidarData = JsonUtility.FromJson<LiDARInitData>(json);
+                Debug.Log("Data loaded from JSON: " + json);
+
+                lidarId = lidarData.Lidar_id;
+                lidarIP = lidarData.lidar_ip;
+                lidarPort = lidarData.lidar_port;
+
+                startIndex = lidarData.startIndex;
+                scanAngle = lidarData.scanAngle;
+            }
+            else
+            {
+                Debug.Log("No saved data found!");
+            }
         }
 
         // 비동기 방식으로 LiDAR에 접속 시도
@@ -218,7 +233,7 @@ namespace MongaLiDAR
                         }
 
                         Debug.Log($"[디버그] 원본 데이터 필터에 전달됨, 타임스탬프: {timeStamp}, 데이터 개수: {measurements.Count}");
-                        DataQueue.EnqueueRawData(new LiDARAgentData(long.Parse(timeStamp), measurements));
+                        dataQueue.EnqueueRawData(new LiDARAgentData(long.Parse(timeStamp), measurements));
                     }
                 }
             }
@@ -290,6 +305,7 @@ namespace MongaLiDAR
             tcpClient?.Close();
             stream?.Dispose();
             tcpClient?.Dispose();
+            isRunning = false;
         }
 
         // 애플리케이션 종료 시 연결 종료
@@ -302,6 +318,206 @@ namespace MongaLiDAR
 
 
 
+        //-------------------여기까지 센서
+
+        //-여기부터 필터--------------------------
+
+        //필터링 수치
+        public int filter_calibrationSamples = 100; // 환경 인식 샘플 개수 (100번 측정)
+        public double filter_threshold = 80; // 변화 감지 임계값 (8cm = 80mm)
+
+        private List<double> environmentBaseline = new List<double>(); // 환경 기준값 저장
+        private List<List<double>> calibrationBuffer = new List<List<double>>(); // 환경 인식용 버퍼
+        private int calibrationCount = 0; // 현재까지 수집된 샘플 개수
+        private bool isCalibrated = false; // 환경 인식 완료 여부
+        
+
+
+        // JSON으로 저장하기
+        public void SaveFilterData()
+        {
+            dataQueue = new DataQueue(); // LiDARTouchManager는 자신만의 DataQueue를 가짐
+
+            LiDARFilterData lidarFilterData = new LiDARFilterData();
+
+            lidarFilterData.filter_calibrationSamples = filter_calibrationSamples;
+            lidarFilterData.filter_threshold = filter_threshold;
+            lidarFilterData.environmentBaseline = environmentBaseline;
+            lidarFilterData.calibrationBuffer = calibrationBuffer;
+            lidarFilterData.calibrationCount = calibrationCount;
+
+
+            string json = JsonUtility.ToJson(lidarFilterData);
+            System.IO.File.WriteAllText(Application.dataPath + "/" + filterFilename, json);
+            Debug.Log("Data saved to JSON: " + json);
+        }
+
+        // JSON에서 데이터 불러오기
+        public bool LoadFilterData()
+        {
+            if (System.IO.File.Exists(Application.dataPath + "/" + filterFilename))
+            {
+                LiDARFilterData lidarFilterData = new LiDARFilterData();
+
+                string json = System.IO.File.ReadAllText(Application.dataPath + "/" + filterFilename);
+                lidarFilterData = JsonUtility.FromJson<LiDARFilterData>(json);
+                Debug.Log("Calibration Filtering Data loaded from JSON: " + json);
+
+                filter_calibrationSamples = lidarFilterData.filter_calibrationSamples;
+                filter_threshold = lidarFilterData.filter_threshold;
+                environmentBaseline = lidarFilterData.environmentBaseline;
+                calibrationBuffer = lidarFilterData.calibrationBuffer;
+                calibrationCount = lidarFilterData.calibrationCount;
+
+                return true;                
+            }
+            else
+            {
+                Debug.Log("No Calibration Filtering Data found!");
+                return false;
+            }
+        }
+
+        public async void FilteringProcess()
+        {
+            while (isRunning)
+            {
+                try
+                {
+                    if (dataQueue.HasRawData())
+                    {
+                        LiDARAgentData rawData = dataQueue.DequeueRawData();
+                        Debug.Log("필터 실행 중...");
+
+                        if (!isCalibrated)
+                        {
+                            if(!LoadFilterData())
+                            {
+                                Debug.Log("Generating Calibration Filtering Dataset. Plz wait..");
+                                CalibrateEnvironment(rawData.measurements);
+                                SaveFilterData();                                
+                            }                            
+                            continue;
+                        }
+                      
+
+                        List<LiDARMeasurement> filteredData = DetectChanges(rawData.measurements);
+
+                        if (filteredData.Count > 0)
+                        {
+                            Debug.Log("필터링된 데이터:");
+                            foreach (var data in filteredData)
+                            {
+                                Debug.Log($"각도: {data.angle:F2}도, 거리: {data.distance} mm");
+                            }
+                            dataQueue.EnqueueFilteredData(new LiDARAgentData(rawData.timestamp, filteredData));
+                        }
+                        else
+                        {
+                            Debug.Log("필터링된 데이터 없음.");
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log("필터 대기 중...");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"필터 처리 중 오류 발생: {ex.Message}");
+                }
+
+                await Task.Delay(100); // 비동기 대기
+            }
+        }
+
+        // 환경 인식 함수 (초기 filter_calibrationSamples번 샘플 수집 후 평균 계산)
+        private void CalibrateEnvironment(List<LiDARMeasurement> measurements)
+        {
+            try
+            {
+                if (calibrationCount == 0)
+                {
+                    environmentBaseline = new List<double>(new double[measurements.Count]);
+                    calibrationBuffer = new List<List<double>>(measurements.Count);
+
+                    for (int i = 0; i < measurements.Count; i++)
+                    {
+                        calibrationBuffer.Add(new List<double>());
+                    }
+                }
+
+                // 65533 값은 저장하지 않음
+                for (int i = 0; i < measurements.Count; i++)
+                {
+                    if (measurements[i].distance != 65533) // 필터링된 값만 처리
+                    {
+                        calibrationBuffer[i].Add(measurements[i].distance);
+                    }
+                }
+
+                calibrationCount++;
+
+                // 100번 샘플 수집 후 환경 인식 완료
+                if (calibrationCount >= filter_calibrationSamples)
+                {
+                    for (int i = 0; i < environmentBaseline.Count; i++)
+                    {
+                        if (calibrationBuffer[i].Count > 0)
+                        {
+                            environmentBaseline[i] = calibrationBuffer[i].Average();
+                        }
+                    }
+
+                    isCalibrated = true;
+                    Debug.Log("환경 인식 완료! (" + filter_calibrationSamples + "회 측정)");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"환경 인식 중 오류 발생: {ex.Message}");
+            }
+        }
+
+        // 변화 감지 함수 (환경과 비교하여 변화된 값만 추출)
+        private List<LiDARMeasurement> DetectChanges(List<LiDARMeasurement> measurements)
+        {
+            List<LiDARMeasurement> filteredData = new List<LiDARMeasurement>();
+
+            try
+            {
+                for (int i = 0; i < measurements.Count; i++)
+                {
+                    if (i >= environmentBaseline.Count) continue;
+
+                    // 탐지 불가능한 거리값(65533) 무시
+                    if (measurements[i].distance == 65533) continue;
+
+                    double difference = Math.Abs(measurements[i].distance - environmentBaseline[i]);
+
+                    if (difference > filter_threshold) // threshold 이상 변화 감지
+                    {
+                        filteredData.Add(measurements[i]); // 변화 감지된 데이터만 저장
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"변화 감지 중 오류 발생: {ex.Message}");
+            }
+
+            return filteredData;
+        }
+
+
+
+
+
+
+
+
+
+        //------------------- 여기까지 필터
 
 
 
@@ -315,9 +531,6 @@ namespace MongaLiDAR
 
 
 
-
-
-       
 
 
 
@@ -328,7 +541,7 @@ namespace MongaLiDAR
         //    //Vector2 screenCoord = ConvertLiDARDataToScreenCoordinates(10f, 45f, 0f); // 예시: 10m 거리, 45도 각도에서 터치 이벤트 처리
 
 
-            
+
 
 
         //    try
@@ -384,7 +597,7 @@ namespace MongaLiDAR
 
 
 
-            
+
         //}
 
         //private async Task WriteCommand(NetworkStream stream, string data)

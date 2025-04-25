@@ -1,20 +1,19 @@
-using System;
-using System.Threading.Tasks;
-using LiDARAgentSys;
-using UnityEngine;
-using UnityEngine.InputSystem;
+//using System;
+//using System.Threading.Tasks;
+//using UnityEngine;
+//using UnityEngine.InputSystem;
 
-public class LiDARManager : MonoBehaviour
-{
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+//public class LiDARManager : MonoBehaviour
+//{
+//    // Start is called once before the first execution of Update after the MonoBehaviour is created
 
-    private static LiDARSensor sensor;
-    private static LidarFilter filter;
+////    private static LiDARSensor sensor;
+////    private static LidarFilter filter;
 
-    void Start()
-    {
+//    void Start()
+//    {
         
-    }
+//    }
 
     //static async Task Run()
     //{
@@ -46,8 +45,8 @@ public class LiDARManager : MonoBehaviour
     //}
 
     // Update is called once per frame
-    void Update()
-    {
+//    void Update()
+//    {
         
-    }
-}
+//    }
+//}
