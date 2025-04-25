@@ -85,9 +85,9 @@ namespace MongaLiDAR
 
             // TCP 연결을 비동기로 시도
             StartConnectionAsync();
-            isRunning = true;
+            
 
-            FilteringProcess();
+            //FilteringProcess();
         }
         private void Update()
         {
@@ -196,6 +196,7 @@ namespace MongaLiDAR
                     {
                         stream = tcpClient.GetStream();
                         Debug.Log("stream get success!");
+                        isRunning = true;
                         return true;
                     }
                 }
@@ -222,17 +223,20 @@ namespace MongaLiDAR
             {
                 await WriteCommandAsync(SCIP_Writer.SCIP2());
                 string receiveData = await ReadLineAsync();
-                
-                while (!token.IsCancellationRequested && isRunning)
+                Debug.Log("SCIP2 complete");
+                isRunning = true;
+
+                while (isRunning)
                 {
                     await WriteCommandAsync(SCIP_Writer.MD(0, maxIndex));
                     receiveData = await ReadLineAsync();
+                    Debug.Log("MD0 complete");
 
                     List<long> distances = new List<long>();
                     long unusedTimeStamp = 0;
 
                     receiveData = await ReadLineAsync();
-                    Debug.Log("dmdkdkdkdkdk");
+                    Debug.Log("SecondAsync");
 
                     if (string.IsNullOrEmpty(receiveData) || !SCIP_Reader.MD(receiveData, ref unusedTimeStamp, ref distances))
                     {
@@ -284,43 +288,40 @@ namespace MongaLiDAR
         // 네트워크 스트림에서 한 줄을 비동기적으로 읽기
         private async Task<string> ReadLineAsync()
         {
-            if (stream?.CanRead == true)
+            if (!stream.CanRead) return null;
+
+            StringBuilder sb = new StringBuilder();
+            bool isNL2 = false;
+            bool isNL = false;
+            byte[] buffer = new byte[1];
+
+            try
             {
-                StringBuilder sb = new StringBuilder();
-                bool isNL2 = false;
-                bool isNL = false;
-                byte[] buffer = new byte[1];
-
-                try
+                do
                 {
-                    do
+                    int byteRead = await stream.ReadAsync(buffer, 0, 1);
+                    if (byteRead == 0) break; // 연결이 끊어진 경우
+
+                    char receivedChar = (char)buffer[0];
+
+                    if (receivedChar == '\n')
                     {
-                        int byteRead = await stream.ReadAsync(buffer, 0, 1);
-                        if (byteRead == 0) break; // 연결 끊어짐
+                        if (isNL) isNL2 = true;
+                        else isNL = true;
+                    }
+                    else isNL = false;
 
-                        char receivedChar = (char)buffer[0];
-
-                        if (receivedChar == '\n')
-                        {
-                            if (isNL) isNL2 = true;
-                            else isNL = true;
-                        }
-                        else isNL = false;
-
-                        sb.Append(receivedChar);
-                    } while (!isNL2);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"데이터 읽기 오류: {ex.Message}");
-                    return null;
-                }
-
-                return sb.ToString();
+                    sb.Append(receivedChar);
+                } while (!isNL2);
             }
-            return null;
-        }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"데이터 읽기 오류: {ex.Message}");
+                return null;
+            }
 
+            return sb.ToString();
+        }
         // 연결 종료 및 리소스 정리
         private void CleanupConnection()
         {
