@@ -28,7 +28,9 @@ public class UrgDeviceEthernet : UrgDevice
     private string ip_address = "192.168.0.10";
     private int port_number = 10940;
 
-    public void StartTCP(string ip = "192.168.0.10", int port = 10940)
+    public System.Action ConnectionLost;
+
+    public bool StartTCP(string ip = "192.168.0.10", int port = 10940)
     {
         //		messageQueue = Queue.Synchronized(new Queue());
 
@@ -61,11 +63,10 @@ public class UrgDeviceEthernet : UrgDevice
         catch (Exception ex)
         {
             Debug.Log(ex.Message);
+            return false;
         }
-        finally
-        {
 
-        }
+        return true;
     }
 
     
@@ -155,6 +156,8 @@ public class UrgDeviceEthernet : UrgDevice
         catch (System.Exception ex)
         {
             Debug.LogWarning("error: " + ex);
+            ConnectionLost();
+
         }
     }
 

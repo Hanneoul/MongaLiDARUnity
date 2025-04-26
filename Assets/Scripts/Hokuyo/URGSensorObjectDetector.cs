@@ -3,11 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using MongaLiDAR;
 using UnityEngine;
+using static HKY.URGSensorObjectDetector;
 
 namespace HKY
 {
+    // 참고자료
     // http://sourceforge.net/p/urgnetwork/wiki/top_jp/
     // https://www.hokuyo-aut.co.jp/02sensor/07scanner/download/pdf/URG_SCIP20.pdf
+
+    public enum DistanceCroppingMethod
+    {
+        RECT, RADIUS
+    }
+
+    public class LiDARSaveFile
+    {
+        public int lidar_id = 0;
+        string ip_address = "192.168.0.10";
+        int port_number = 10940;
+        int distanceCroppingMethod;
+
+        long maxDetectionDist;
+
+        int timeSmoothBreakingDistanceChange = 100;
+        int smoothKernelSize = 21;
+        float retryTime;
+    }
+
+
     public class URGSensorObjectDetector : MonoBehaviour
     {
         [Header("Monga Contents Dependent")]
@@ -15,7 +38,7 @@ namespace HKY
         public LiDARTouchReceiver touchReceiver;  // LiDAR 리시버 참조
 
         [Header("Connection with Sensor")]
-        public int lidar_id = 0;
+        [SerializeField] int lidar_id = 0;
         [SerializeField] string ip_address = "192.168.0.10";
         [SerializeField] int port_number = 10940;
         UrgDeviceEthernet urg;
@@ -41,13 +64,13 @@ namespace HKY
         }
 
         [Header("----------Radius based constrain")]
-        public long maxDetectionDist = 7000;//for radius based detection, unit is mm
+        public long maxDetectionDist = 10000;//for radius based detection, unit is mm
 
         [Header("Post Processing Distance Data")]
         [SerializeField] bool smoothDistanceCurve = false;
         [SerializeField] bool smoothDistanceByTime = false;
         //if change between two consecutive frame is bigger than this number, then do not do smoothing
-        [Range(1, 500)] public int timeSmoothBreakingDistanceChange = 200;
+        [Range(1, 500)] public int timeSmoothBreakingDistanceChange = 100;
         [Range(1, 130)] public int smoothKernelSize = 21;
         List<long> smoothByTimePreviousList = new List<long>();
         [Range(0.01f, 1f)] public float timeSmoothFactor;
@@ -58,7 +81,7 @@ namespace HKY
         List<RawObject> rawObjectList;
 
 
-         [SerializeField] List<ProcessedObject> detectedObjects;
+        [SerializeField] List<ProcessedObject> detectedObjects;
         [Header("Object Tracking")]
         [SerializeField] float distanceThresholdForMerge = 300;
         [Range(0.01f, 1f)] public float objectPositionSmoothTime = 0.2f;
@@ -71,11 +94,11 @@ namespace HKY
 
         [Header("Debug Draw")]
         [SerializeField] bool debugDrawDistance = false;
-        [SerializeField] bool drawObjectRays = true;
-        [SerializeField] bool drawObjectCenterRay = true;
+        [SerializeField] bool drawObjectRays = false;
+        [SerializeField] bool drawObjectCenterRay = false;
         [SerializeField] bool drawObject = true;
         [SerializeField] bool drawProcessedObject = true;
-        [SerializeField] bool drawRunningLine = true;
+        [SerializeField] bool drawRunningLine = false;
         [SerializeField] bool showHardwareControlButtons = false;
         [SerializeField] bool recalculateConstrainAreaEveryFrame = false;
         //colors
@@ -89,10 +112,11 @@ namespace HKY
         List<long> strengths;
         Vector3[] directions;
 
-        public enum DistanceCroppingMethod
-        {
-            RECT, RADIUS
-        }
+        bool isRunning = false;
+        private float retryTime = 5f; // 5초 대기 시간
+        private float currentTime = 5f; // 현재 시간
+        private bool isWaiting = false; // 대기 중인지 여부
+
 
         public ProcessedObject GetObjectByGuid(Guid guid)
         {
@@ -316,6 +340,8 @@ namespace HKY
             // GUILayout.Label("drawCount: " + drawCount + " / detectObjects: " + detectedObjects.Count);
         }
 
+
+
         // Use this for initialization
         private void Start()
         {
@@ -324,9 +350,17 @@ namespace HKY
             detectedObjects = new List<ProcessedObject>();
 
             urg = gameObject.AddComponent<UrgDeviceEthernet>();
-            urg.StartTCP(ip_address, port_number);
 
-            StartMeasureDistance();
+            urg.ConnectionLost = connectionLost;
+        }
+
+        public void connectionLost()
+        {
+            isRunning = false;
+            retryTime = 5f; // 5초 대기 시간
+            currentTime = 5f; // 현재 시간
+            isWaiting = false; // 대기 중인지 여부
+            Start();            
         }
 
         private void StartMeasureDistance()
@@ -346,65 +380,88 @@ namespace HKY
             }
         }
 
+        
+        
 
+     
         private void Update()
         {
-
-            if (smoothKernelSize % 2 == 0) { smoothKernelSize += 1; }
-
-
-            List<long> originalDistances = new List<long>();
-            lock (urg.distances)
+            if(!isRunning)
             {
-                if (urg.distances.Count <= 0) return;
-                originalDistances = new List<long>(urg.distances);
-            }
-            if (originalDistances.Count <= 0) return;
+                currentTime += Time.deltaTime;
 
-
-            //Setting up things, one time
-            if (sensorScanSteps <= 0)
-            {
-                sensorScanSteps = urg.distances.Count;
-                distanceConstrainList = new long[sensorScanSteps];
-                CacheDirections();
-                CalculateDistanceConstrainList(sensorScanSteps);
-
-            }
-
-            if (recalculateConstrainAreaEveryFrame)
-            {
-                if (Time.frameCount % 10 == 0)
+                // 5초가 지나면 다시 실행
+                if (currentTime >= retryTime)
                 {
-                    CalculateDistanceConstrainList(sensorScanSteps);
+                    if (urg.StartTCP(ip_address, port_number))
+                    {
+                        StartMeasureDistance();
+                        isRunning = true;
+                    }
+                    else
+                    {
+                        currentTime = 0;
+                    }
                 }
             }
+            else { 
 
-            if (gd_loop)
-            {
-                urg.Write(SCIP_library.SCIP_Writer.GD(0, 1080));
+                 if (smoothKernelSize % 2 == 0) { smoothKernelSize += 1; }
+
+
+                List<long> originalDistances = new List<long>();
+                lock (urg.distances)
+                {
+                    if (urg.distances.Count <= 0) return;
+                    originalDistances = new List<long>(urg.distances);
+                }
+                if (originalDistances.Count <= 0) return;
+
+
+                //Setting up things, one time
+                if (sensorScanSteps <= 0)
+                {
+                    sensorScanSteps = urg.distances.Count;
+                    distanceConstrainList = new long[sensorScanSteps];
+                    CacheDirections();
+                    CalculateDistanceConstrainList(sensorScanSteps);
+
+                }
+
+                if (recalculateConstrainAreaEveryFrame)
+                {
+                    if (Time.frameCount % 10 == 0)
+                    {
+                        CalculateDistanceConstrainList(sensorScanSteps);
+                    }
+                }
+
+                if (gd_loop)
+                {
+                    urg.Write(SCIP_library.SCIP_Writer.GD(0, 1080));
+                }
+
+                var cropped = ConstrainDetectionArea(originalDistances, distanceCroppingMethod);
+                croppedDistances.Clear();
+                croppedDistances.AddRange(cropped);
+
+
+                if (smoothDistanceCurve)
+                {
+                    croppedDistances = SmoothDistanceCurve(croppedDistances, smoothKernelSize);
+                }
+                if (smoothDistanceByTime)
+                {
+                    croppedDistances = SmoothDistanceCurveByTime(croppedDistances, ref smoothByTimePreviousList, timeSmoothFactor);
+                }
+
+
+                //-----------------
+                //  detect objects
+
+
+                UpdateObjectList();
             }
-
-            var cropped = ConstrainDetectionArea(originalDistances, distanceCroppingMethod);
-            croppedDistances.Clear();
-            croppedDistances.AddRange(cropped);
-
-
-            if (smoothDistanceCurve)
-            {
-                croppedDistances = SmoothDistanceCurve(croppedDistances, smoothKernelSize);
-            }
-            if (smoothDistanceByTime)
-            {
-                croppedDistances = SmoothDistanceCurveByTime(croppedDistances, ref smoothByTimePreviousList, timeSmoothFactor);
-            }
-
-
-            //-----------------
-            //  detect objects
-
-
-            UpdateObjectList();
         }
 
         private List<long> SmoothDistanceCurve(List<long> croppedDistances, int smoothKernelSize)
@@ -544,13 +601,10 @@ namespace HKY
                         detectedObjects.Add(newbie);
                         //ES
                         // LiDARTouchReceiver에 터치 시작 이벤트 전달
-                        touchReceiver.OnTouchStart(leftOverNewObject.position, lidar_id);
+                        touchReceiver.OnTouchStart(newbie.position, lidar_id);
 
                         if (OnNewObject != null) { 
                             OnNewObject(newbie);
-                            
-                            
-
                         }
                     }
                 }
@@ -560,6 +614,9 @@ namespace HKY
                     {
                         var newbie = new ProcessedObject(obj.position, obj.size, objectPositionSmoothTime);
                         detectedObjects.Add(newbie);
+                        //ES
+                        // LiDARTouchReceiver에 터치 시작 이벤트 전달
+                        //touchReceiver.OnTouchStart(newbie.position, lidar_id);
                         if (OnNewObject != null) { OnNewObject(newbie); }
                     }
                 }

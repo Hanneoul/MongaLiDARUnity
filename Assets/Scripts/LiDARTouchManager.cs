@@ -11,12 +11,13 @@ using System.Linq;
 namespace MongaLiDAR
 {
 
+  
+
     public class LiDARTouchManager : MonoBehaviour
     {
         // LiDAR 터치와 매핑에 필요한 오브젝트 
         public Camera lidarCamera;  // 카메라 객체 (하나만 사용)
         public ITouchInputHandler touchReceiver;  // LiDAR 리시버 참조
-
 
         public string settingFilename = "lidar_data01.json";
         //LiDAR 정보
