@@ -42,6 +42,7 @@ namespace HKY
         [SerializeField] string ip_address = "192.168.0.10";
         [SerializeField] int port_number = 10940;
         UrgDeviceEthernet urg;
+        public float retryTime = 5f; // 5초 대기 시간
         public int sensorScanSteps { get; private set; }
         public bool open { get; private set; }
         bool gd_loop = false;
@@ -113,9 +114,8 @@ namespace HKY
         Vector3[] directions;
 
         bool isRunning = false;
-        private float retryTime = 5f; // 5초 대기 시간
         private float currentTime = 5f; // 현재 시간
-        private bool isWaiting = false; // 대기 중인지 여부
+        
 
 
         public ProcessedObject GetObjectByGuid(Guid guid)
@@ -357,9 +357,8 @@ namespace HKY
         public void connectionLost()
         {
             isRunning = false;
-            retryTime = 5f; // 5초 대기 시간
-            currentTime = 5f; // 현재 시간
-            isWaiting = false; // 대기 중인지 여부
+            currentTime = retryTime; // 현재 시간
+            
             Start();            
         }
 
@@ -380,10 +379,6 @@ namespace HKY
             }
         }
 
-        
-        
-
-     
         private void Update()
         {
             if(!isRunning)
