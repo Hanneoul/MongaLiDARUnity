@@ -203,14 +203,14 @@ MonoBehaviour:
   deltaLimit: 150
   detectedObjects: []
   distanceThresholdForMerge: 300
-  objectPositionSmoothTime: 0.2
+  objectPositionSmoothTime: 0.185
   positionOffset: {x: 0, y: 0}
   useOffset: 1
-  debugDrawDistance: 0
+  debugDrawDistance: 1
   drawObjectRays: 0
   drawObjectCenterRay: 0
-  drawObject: 1
-  drawProcessedObject: 1
+  drawObject: 0
+  drawProcessedObject: 0
   drawRunningLine: 0
   showHardwareControlButtons: 0
   recalculateConstrainAreaEveryFrame: 0

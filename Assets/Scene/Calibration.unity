@@ -361,7 +361,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1758269969}
-  - component: {fileID: 1758269968}
+  - component: {fileID: 1758269970}
   m_Layer: 0
   m_Name: LiDARManager
   m_TagString: Untagged
@@ -369,29 +369,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1758269968
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1758269967}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e9967fae3176c1e44a6ad7950978ed84, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lidarCamera: {fileID: 5904240}
-  touchReceiver: {fileID: 883117798}
-  settingFilename: lidar_data01.json
-  lidarId: 0
-  lidarIP: 192.168.0.10
-  lidarPort: 10940
-  startIndex: 200
-  scanAngle: 270
-  filterFilename: lidar_filter_data01.json
-  filter_calibrationSamples: 100
-  filter_threshold: 80
 --- !u!4 &1758269969
 Transform:
   m_ObjectHideFlags: 0
@@ -407,6 +384,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1758269970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1758269967}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 307b3ffa9488c41619dec48bc346675c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lidarCamera: {fileID: 5904240}
+  touchReceiver: {fileID: 883117798}
+  saveFileName: LiDARSetting01.JSON
+  filterFileName: LiDAR01Filter.JSON
+  lidar_id: 0
+  ip_address: 192.168.0.10
+  port_number: 10940
+  retryTime: 5
+  distanceCroppingMethod: 1
+  detectRectWidth: 0
+  detectRectHeight: 0
+  maxDetectionDist: 10000
+  filter_calibrationSamples: 3000
+  filter_threshold: 80
+  environmentBaseline: 
+  smoothDistanceCurve: 0
+  smoothDistanceByTime: 0
+  timeSmoothBreakingDistanceChange: 100
+  smoothKernelSize: 21
+  timeSmoothFactor: 0
+  noiseLimit: 7
+  deltaLimit: 150
+  detectedObjects: []
+  distanceThresholdForMerge: 300
+  objectPositionSmoothTime: 0.2
+  positionOffset: {x: 0, y: 0}
+  useOffset: 1
+  debugDrawDistance: 0
+  drawObjectRays: 0
+  drawObjectCenterRay: 0
+  drawObject: 1
+  drawProcessedObject: 1
+  drawRunningLine: 0
+  showHardwareControlButtons: 0
+  recalculateConstrainAreaEveryFrame: 0
+  distanceColor: {r: 1, g: 1, b: 1, a: 1}
+  strengthColor: {r: 1, g: 0, b: 0, a: 1}
+  objectColor: {r: 0, g: 1, b: 0, a: 1}
+  processedObjectColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
