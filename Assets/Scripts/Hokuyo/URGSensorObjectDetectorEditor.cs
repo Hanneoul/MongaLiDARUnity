@@ -1,28 +1,29 @@
+using HKY;
 using UnityEditor;
 using UnityEngine;
 
-namespace MongaLiDAR
+namespace HKY
 {
 
-    [CustomEditor(typeof(LiDARTouchManagerEditor))]
-    public class LiDARTouchManagerEditor : Editor
+    [CustomEditor(typeof(URGSensorObjectDetector))]
+    public class URGSensorObjectDetectorEditor : Editor
     {
         public override void OnInspectorGUI()
         {
             DrawDefaultInspector(); // 기본 Inspector UI 그리기
 
-            LiDARTouchManager lidarManager = (LiDARTouchManager)target;
+            URGSensorObjectDetector lidarManager = (URGSensorObjectDetector)target;
 
             // Generate 버튼 추가
             if (GUILayout.Button("Save as JSON"))
             {
-                lidarManager.SaveData();
+                lidarManager.SaveOptionFile();
             }
 
             // Clear Children 버튼 추가
             if (GUILayout.Button("Load from JSON"))
             {
-                lidarManager.LoadData();
+                lidarManager.LoadOptionFile();
             }
         }
     }

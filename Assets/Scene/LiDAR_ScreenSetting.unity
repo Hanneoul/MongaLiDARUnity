@@ -119,83 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &85867096
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 85867098}
-  - component: {fileID: 85867097}
-  m_Layer: 0
-  m_Name: TestNewLiDARManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &85867097
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 85867096}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 307b3ffa9488c41619dec48bc346675c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lidarCamera: {fileID: 1856545284}
-  touchReceiver: {fileID: 887521896}
-  lidar_id: 0
-  ip_address: 192.168.0.10
-  port_number: 10940
-  distanceCroppingMethod: 1
-  detectRectWidth: 0
-  detectRectHeight: 0
-  maxDetectionDist: 7000
-  smoothDistanceCurve: 0
-  smoothDistanceByTime: 0
-  timeSmoothBreakingDistanceChange: 200
-  smoothKernelSize: 21
-  timeSmoothFactor: 0.01
-  noiseLimit: 7
-  deltaLimit: 200
-  detectedObjects: []
-  distanceThresholdForMerge: 300
-  objectPositionSmoothTime: 0.2
-  positionOffset: {x: 0, y: 0}
-  useOffset: 1
-  debugDrawDistance: 0
-  drawObjectRays: 1
-  drawObjectCenterRay: 1
-  drawObject: 1
-  drawProcessedObject: 1
-  drawRunningLine: 1
-  showHardwareControlButtons: 0
-  recalculateConstrainAreaEveryFrame: 0
-  distanceColor: {r: 1, g: 1, b: 1, a: 1}
-  strengthColor: {r: 1, g: 0, b: 0, a: 1}
-  objectColor: {r: 0, g: 1, b: 0, a: 1}
-  processedObjectColor: {r: 0, g: 1, b: 1, a: 1}
---- !u!4 &85867098
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 85867096}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &134257291
 GameObject:
   m_ObjectHideFlags: 0
@@ -222,6 +145,89 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &262976249
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 262976251}
+  - component: {fileID: 262976250}
+  m_Layer: 0
+  m_Name: LidarManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &262976250
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 262976249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 307b3ffa9488c41619dec48bc346675c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lidarCamera: {fileID: 1856545284}
+  touchReceiver: {fileID: 887521896}
+  saveFileName: LiDARSetting01.JSON
+  filterFileName: LiDAR01Filter.JSON
+  lidar_id: 0
+  ip_address: 192.168.0.10
+  port_number: 10940
+  retryTime: 5
+  distanceCroppingMethod: 1
+  detectRectWidth: 0
+  detectRectHeight: 0
+  maxDetectionDist: 10000
+  filter_calibrationSamples: 3000
+  filter_threshold: 80
+  environmentBaseline: 
+  smoothDistanceCurve: 0
+  smoothDistanceByTime: 0
+  timeSmoothBreakingDistanceChange: 100
+  smoothKernelSize: 21
+  timeSmoothFactor: 0
+  noiseLimit: 7
+  deltaLimit: 150
+  detectedObjects: []
+  distanceThresholdForMerge: 300
+  objectPositionSmoothTime: 0.2
+  positionOffset: {x: 0, y: 0}
+  useOffset: 1
+  debugDrawDistance: 0
+  drawObjectRays: 0
+  drawObjectCenterRay: 0
+  drawObject: 1
+  drawProcessedObject: 1
+  drawRunningLine: 0
+  showHardwareControlButtons: 0
+  recalculateConstrainAreaEveryFrame: 0
+  distanceColor: {r: 1, g: 1, b: 1, a: 1}
+  strengthColor: {r: 1, g: 0, b: 0, a: 1}
+  objectColor: {r: 0, g: 1, b: 0, a: 1}
+  processedObjectColor: {r: 0, g: 1, b: 1, a: 1}
+--- !u!4 &262976251
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 262976249}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 196.98352, y: 928.31354, z: -176.00427}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -368,51 +374,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1063157475
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1063157477}
-  - component: {fileID: 1063157476}
-  m_Layer: 0
-  m_Name: LiDARTCPserver
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1063157476
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1063157475}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbcea5083390fc945b172ab025b03f9d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  port: 6700
---- !u!4 &1063157477
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1063157475}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.406841, y: 9.164635, z: -1.0084052}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1856545282
 GameObject:
   m_ObjectHideFlags: 0
@@ -510,8 +471,7 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 309344525}
-  - {fileID: 1063157477}
   - {fileID: 134257292}
-  - {fileID: 85867098}
   - {fileID: 1856545285}
   - {fileID: 887521897}
+  - {fileID: 262976251}

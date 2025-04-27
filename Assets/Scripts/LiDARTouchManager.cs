@@ -102,7 +102,7 @@ namespace MongaLiDAR
                 foreach (var measurement in filteredData.measurements)
                 {
                     // 터치 시작 이벤트 호출
-                    LiDARTouchReceiver.Instance.OnTouchStart(new Vector2((float)measurement.angle, (float)measurement.distance), lidarId);
+                    //LiDARTouchReceiver.Instance.OnTouchStart(new Vector2((float)measurement.angle, (float)measurement.distance), lidarId);
 
                     // 터치 종료 이벤트 호출 (예시로 바로 종료 처리, 실제로는 상황에 맞게 변경)
                     //LiDARTouchReceiver.Instance.OnTouchEnd(new Vector2((float)measurement.angle, (float)measurement.distance), lidarId);
@@ -692,7 +692,7 @@ namespace MongaLiDAR
             Vector2 screenCoord = ConvertLiDARDataToScreenCoordinates(distance, horizontalAngle, verticalAngle);
 
             // LiDARTouchReceiver에 터치 시작 이벤트 전달
-            touchReceiver.OnTouchStart(screenCoord, lidarId);
+            //touchReceiver.OnTouchStart(screenCoord, lidarId);
 
             // 예시: 2초 후 터치 종료
             Invoke("TriggerTouchEnd", 2f);  // 2초 후 터치 종료 처리
@@ -701,7 +701,7 @@ namespace MongaLiDAR
         private void TriggerTouchEnd()
         {
             Vector2 screenCoord = new Vector2(100, 100);  // 예시 좌표
-            touchReceiver.OnTouchEnd(screenCoord, lidarId);  // 터치 종료 이벤트 처리
+            //touchReceiver.OnTouchEnd(screenCoord, lidarId);  // 터치 종료 이벤트 처리
         }
 
         // LiDAR 데이터(각도, 거리)를 3D 좌표로 변환 후, 화면 좌표로 변환

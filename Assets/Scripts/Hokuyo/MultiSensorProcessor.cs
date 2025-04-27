@@ -15,7 +15,7 @@ public class MultiSensorProcessor : MonoBehaviour
     {
         //remove inactive sensor script
         sensors.RemoveAll(sensor => !sensor.gameObject.activeInHierarchy || !sensor.enabled);
-        
+
         //calculate sensor's offset
         switch (sensors.Count)
         {

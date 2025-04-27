@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using MongaLiDAR;
 using UnityEngine;
-using static HKY.URGSensorObjectDetector;
+using HKY;
+using System.Threading;
 
 namespace HKY
 {
@@ -16,26 +17,44 @@ namespace HKY
         RECT, RADIUS
     }
 
+    [Serializable]
     public class LiDARSaveFile
     {
         public int lidar_id = 0;
-        string ip_address = "192.168.0.10";
-        int port_number = 10940;
-        int distanceCroppingMethod;
+        public string ip_address = "192.168.0.10";
+        public int port_number = 10940;
+        
+        public long maxDetectionDist;
 
-        long maxDetectionDist;
+        public int timeSmoothBreakingDistanceChange = 100;
+        public int smoothKernelSize = 21;
+        public float retryTime;
 
-        int timeSmoothBreakingDistanceChange = 100;
-        int smoothKernelSize = 21;
-        float retryTime;
+        public int noiseLimit;
+        public int deltaLimit;
+        public string filterFileName;
+        public int filter_calibrationSamples;
     }
 
+    [Serializable]
+    public class LiDARFilterFile
+    {
+        // 필터링 수치들
+        public long filter_threshold;         // 변화 감지 임계값
+
+        // 환경 인식 관련 데이터
+        public List<long> environmentBaseline; // 환경 기준값 저장
+        
+        
+    }
 
     public class URGSensorObjectDetector : MonoBehaviour
     {
         [Header("Monga Contents Dependent")]
         public Camera lidarCamera;  // 카메라 객체 (하나만 사용)
         public LiDARTouchReceiver touchReceiver;  // LiDAR 리시버 참조
+        public string saveFileName = "LiDARSetting01.JSON";
+        public string filterFileName = "LiDAR01Filter.JSON";
 
         [Header("Connection with Sensor")]
         [SerializeField] int lidar_id = 0;
@@ -67,6 +86,18 @@ namespace HKY
         [Header("----------Radius based constrain")]
         public long maxDetectionDist = 10000;//for radius based detection, unit is mm
 
+
+        [Header("Pre Filtering Distance Data")]
+        // 필터링 수치들
+        public int filter_calibrationSamples = 3000;  // 환경 인식 샘플 개수
+        public long filter_threshold = 80;         // 변화 감지 임계값
+
+        // 환경 인식 관련 데이터
+        public List<long> environmentBaseline; // 환경 기준값 저장
+        private List<List<long>> calibrationBuffer; // 환경 인식용 버퍼
+        private int calibrationCount; // 현재까지 수집된 샘플 개수
+        bool isFilterLoaded = false;
+
         [Header("Post Processing Distance Data")]
         [SerializeField] bool smoothDistanceCurve = false;
         [SerializeField] bool smoothDistanceByTime = false;
@@ -78,7 +109,7 @@ namespace HKY
 
         [Header("Object Detection")]
         [Range(1, 40)] public int noiseLimit = 7;
-        [Range(10, 1000)] public int deltaLimit = 200;
+        [Range(10, 1000)] public int deltaLimit = 150;      //오브젝트로 감지하는 범위
         List<RawObject> rawObjectList;
 
 
@@ -115,8 +146,99 @@ namespace HKY
 
         bool isRunning = false;
         private float currentTime = 5f; // 현재 시간
-        
 
+
+
+        public void SaveOptionFile()
+        {
+            LiDARSaveFile lidarData = new LiDARSaveFile();
+            lidarData.lidar_id = lidar_id;
+            lidarData.ip_address = ip_address;
+            lidarData.port_number = port_number;
+
+            lidarData.noiseLimit = noiseLimit;
+            lidarData.deltaLimit = deltaLimit;
+
+            lidarData.maxDetectionDist = maxDetectionDist;
+            lidarData.retryTime = retryTime;
+            lidarData.smoothKernelSize = smoothKernelSize;
+            lidarData.timeSmoothBreakingDistanceChange = timeSmoothBreakingDistanceChange;
+            lidarData.filterFileName = filterFileName;
+            lidarData.filter_calibrationSamples = filter_calibrationSamples;
+
+            string json = JsonUtility.ToJson(lidarData);
+            System.IO.File.WriteAllText(Application.dataPath + "/" + saveFileName, json);
+            Debug.Log("Data saved to JSON: " + json);            
+        }
+        public bool LoadOptionFile()
+        {
+            if (System.IO.File.Exists(Application.dataPath + "/" + saveFileName))
+            {
+                LiDARSaveFile lidarData = new LiDARSaveFile();
+
+                string json = System.IO.File.ReadAllText(Application.dataPath + "/" + saveFileName);
+                lidarData = JsonUtility.FromJson<LiDARSaveFile>(json);
+                Debug.Log("Option Data loaded from JSON: " + json);
+
+                lidar_id = lidarData.lidar_id;
+                ip_address = lidarData.ip_address;
+                port_number = lidarData.port_number;
+
+                noiseLimit = lidarData.noiseLimit;
+                deltaLimit = lidarData.deltaLimit;
+
+                maxDetectionDist = lidarData.maxDetectionDist;
+                retryTime = lidarData.retryTime;
+                smoothKernelSize = lidarData.smoothKernelSize;
+                timeSmoothBreakingDistanceChange = lidarData.timeSmoothBreakingDistanceChange;
+
+                filterFileName = lidarData.filterFileName;
+                filter_calibrationSamples = lidarData.filter_calibrationSamples;
+            }
+            else
+            {
+                Debug.Log("No saved data found!");
+                return false;
+            }
+
+            return true;
+        }
+
+        public void SaveFilter()
+        {
+            LiDARFilterFile lidarData = new LiDARFilterFile();
+
+            lidarData.filter_threshold = filter_threshold;
+            lidarData.environmentBaseline = new List<long>(environmentBaseline);
+
+            string json = JsonUtility.ToJson(lidarData);
+            System.IO.File.WriteAllText(Application.dataPath + "/" + filterFileName, json);
+            Debug.Log("Filter Data saved to JSON: " + json);
+        }
+
+        public bool LoadFilter()
+        {
+            if (System.IO.File.Exists(Application.dataPath + "/" + filterFileName))
+            {
+                LiDARFilterFile lidarData = new LiDARFilterFile();
+
+                string json = System.IO.File.ReadAllText(Application.dataPath + "/" + filterFileName);
+                lidarData = JsonUtility.FromJson<LiDARFilterFile>(json);
+                Debug.Log("Data loaded from JSON: " + json);
+
+                filter_threshold = lidarData.filter_threshold;
+                environmentBaseline = new List<long>(lidarData.environmentBaseline);                
+
+                isFilterLoaded = true;
+            }
+            else
+            {
+                Debug.Log("No filter data found!");
+                return false;
+            }
+
+            return true;
+        }
 
         public ProcessedObject GetObjectByGuid(Guid guid)
         {
@@ -338,6 +460,8 @@ namespace HKY
             //GUILayout.Label("distances.Count: " + distances.Count + " / strengths.Count: " + strengths.Count);
             //        GUILayout.Label("distances.Length: " + distances + " / strengths.Count: " + strengths.Count);
             // GUILayout.Label("drawCount: " + drawCount + " / detectObjects: " + detectedObjects.Count);
+
+           
         }
 
 
@@ -345,6 +469,16 @@ namespace HKY
         // Use this for initialization
         private void Start()
         {
+            if(!LoadOptionFile())
+            {
+                Debug.Log("SaveFile Not Loaded");
+            }
+            if(!LoadFilter())
+            {
+                //필터링 해야함
+                Debug.Log("Filter Not Loaded");
+            }    
+
             croppedDistances = new List<long>();
             strengths = new List<long>();
             detectedObjects = new List<ProcessedObject>();
@@ -356,9 +490,9 @@ namespace HKY
 
         public void connectionLost()
         {
-            isRunning = false;
             currentTime = retryTime; // 현재 시간
-            
+            isRunning = false;
+                        
             Start();            
         }
 
@@ -399,9 +533,15 @@ namespace HKY
                     }
                 }
             }
-            else { 
+            else {
 
-                 if (smoothKernelSize % 2 == 0) { smoothKernelSize += 1; }
+                if(!urg.CheckThread())
+                {
+                    connectionLost();
+                    return;
+                }
+
+                if (smoothKernelSize % 2 == 0) { smoothKernelSize += 1; }
 
 
                 List<long> originalDistances = new List<long>();
@@ -451,12 +591,90 @@ namespace HKY
                 }
 
 
+
+
                 //-----------------
                 //  detect objects
-
-
-                UpdateObjectList();
+                if (!isFilterLoaded)
+                {
+                    isFilterLoaded = FilterSampling(croppedDistances, distanceConstrainList);
+                    
+                }
+                else
+                {
+                    Filtering(croppedDistances, distanceConstrainList);
+                    UpdateObjectList();
+                }
             }
+        }
+
+        private void Filtering(List<long> croppedDistances, long[] distanceConstrainList)
+        {
+            for (int i = 0; i < croppedDistances.Count; i++)
+            {
+                if (i >= environmentBaseline.Count) continue;
+
+                // 탐지 불가능한 거리값(65533) 무시
+                if (croppedDistances[i] == 65533) continue;
+
+                long difference = Math.Abs(croppedDistances[i] - environmentBaseline[i]);
+
+                if (difference <= filter_threshold) // 8cm 이상 변화 감지
+                {
+                    croppedDistances[i] = 65533; // 변화 감지 안됐을땐 쓰레기값 투하
+                }
+            }
+        }
+
+        private bool FilterSampling(List<long> croppedDistances, long[] distanceConstrainList)
+        {
+            // 필터링 수치들
+            //public int filter_calibrationSamples;  // 환경 인식 샘플 개수
+            //public double filter_threshold;         // 변화 감지 임계값
+
+            //// 환경 인식 관련 데이터
+            //public List<double> environmentBaseline; // 환경 기준값 저장
+            //public List<List<double>> calibrationBuffer; // 환경 인식용 버퍼
+            //public int calibrationCount; // 현재까지 수집된 샘플 개수
+
+            if (calibrationCount == 0)
+            {
+                environmentBaseline = new List<long>(new long[croppedDistances.Count]);
+                calibrationBuffer = new List<List<long>>(croppedDistances.Count);
+
+                for (int i = 0; i < croppedDistances.Count; i++)
+                {
+                    calibrationBuffer.Add(new List<long>());
+                }
+            }
+
+            // 65533 값은 저장하지 않음
+            for (int i = 0; i < croppedDistances.Count; i++)
+            {
+                if (croppedDistances[i] < distanceConstrainList[i])
+                {
+                    calibrationBuffer[i].Add(croppedDistances[i]);
+                }                
+            }
+
+            calibrationCount++;
+
+            if (calibrationCount >= filter_calibrationSamples)
+            {
+                for (int i = 0; i < environmentBaseline.Count; i++)
+                {
+                    if (calibrationBuffer[i].Count > 0)
+                    {
+                        environmentBaseline[i] = (long)calibrationBuffer[i].Average();
+                    }
+                }
+
+                SaveFilter();
+                Debug.Log("환경 인식 완료! (" + filter_calibrationSamples + "회 측정)");
+                return true;
+            }
+
+            return false;
         }
 
         private List<long> SmoothDistanceCurve(List<long> croppedDistances, int smoothKernelSize)
@@ -523,6 +741,7 @@ namespace HKY
             return resultList;
         }
 
+        List<string> objGuids = new List<string>();
 
         void UpdateObjectList()
         {
@@ -582,6 +801,9 @@ namespace HKY
                     for (int i = 0; i < detectedObjects.Count; i++)
                     {
                         var obj = detectedObjects[i];
+                        //ES
+                        // LiDARTouchReceiver에 터치 시작 이벤트 전달
+                        //touchReceiver.OnTouchEnd(obj.position,lidar_id, obj.guid.ToString());
                         if (obj.clear)
                         {
                             detectedObjects.RemoveAt(i);
@@ -596,7 +818,7 @@ namespace HKY
                         detectedObjects.Add(newbie);
                         //ES
                         // LiDARTouchReceiver에 터치 시작 이벤트 전달
-                        touchReceiver.OnTouchStart(newbie.position, lidar_id);
+                        touchReceiver.OnTouchStart(newbie.position, lidar_id, newbie.guid.ToString());
 
                         if (OnNewObject != null) { 
                             OnNewObject(newbie);

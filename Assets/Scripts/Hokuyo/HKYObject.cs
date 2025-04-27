@@ -59,6 +59,15 @@ namespace HKY
             return new Vector2(x, y);
         }
 
+        Vector2 CalculateFixedPosition(Vector3 dir, float dist)
+        {
+            float angle = Vector3.Angle(dir, Vector3.right);
+            float theta = angle * Mathf.Deg2Rad;
+            float x = Mathf.Cos(theta) * dist;
+            float y = Mathf.Sin(theta) * dist;
+            return new Vector2(x, y);
+        }
+
         public RawObject(in Vector3[] cachedDirs, int id)
         {
             distList = new List<long>();
