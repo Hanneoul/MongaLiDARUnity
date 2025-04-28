@@ -159,7 +159,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 262976251}
-  - component: {fileID: 262976250}
+  - component: {fileID: 262976252}
   m_Layer: 0
   m_Name: LidarManager
   m_TagString: Untagged
@@ -167,57 +167,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &262976250
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 262976249}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 307b3ffa9488c41619dec48bc346675c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lidarCamera: {fileID: 1856545284}
-  touchReceiver: {fileID: 887521896}
-  saveFileName: LiDARSetting01.JSON
-  filterFileName: LiDAR01Filter.JSON
-  lidar_id: 0
-  ip_address: 192.168.0.10
-  port_number: 10940
-  retryTime: 5
-  distanceCroppingMethod: 1
-  detectRectWidth: 0
-  detectRectHeight: 0
-  maxDetectionDist: 10000
-  filter_calibrationSamples: 3000
-  filter_threshold: 80
-  environmentBaseline: 
-  smoothDistanceCurve: 0
-  smoothDistanceByTime: 0
-  timeSmoothBreakingDistanceChange: 100
-  smoothKernelSize: 21
-  timeSmoothFactor: 0
-  noiseLimit: 7
-  deltaLimit: 150
-  detectedObjects: []
-  distanceThresholdForMerge: 300
-  objectPositionSmoothTime: 0.185
-  positionOffset: {x: 0, y: 0}
-  useOffset: 1
-  debugDrawDistance: 1
-  drawObjectRays: 0
-  drawObjectCenterRay: 0
-  drawObject: 0
-  drawProcessedObject: 0
-  drawRunningLine: 0
-  showHardwareControlButtons: 0
-  recalculateConstrainAreaEveryFrame: 0
-  distanceColor: {r: 1, g: 1, b: 1, a: 1}
-  strengthColor: {r: 1, g: 0, b: 0, a: 1}
-  objectColor: {r: 0, g: 1, b: 0, a: 1}
-  processedObjectColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!4 &262976251
 Transform:
   m_ObjectHideFlags: 0
@@ -233,6 +182,60 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &262976252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 262976249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 307b3ffa9488c41619dec48bc346675c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lidarCamera: {fileID: 1856545284}
+  touchReceiver: {fileID: 887521896}
+  saveFileName: LiDARSetting01.JSON
+  filterFileName: LiDARFilter01.JSON
+  lidar_id: 0
+  ip_address: 192.168.0.44
+  port_number: 10940
+  retryTime: 5
+  distanceCroppingMethod: 0
+  detectRectWidth: 5000
+  detectRectHeight: 4000
+  maxDetectionDist: 36000
+  filter_calibrationSamples: 3000
+  filter_threshold: 120
+  environmentBaseline: 
+  CalibCoord: {x: 0, y: 0}
+  CalibDistanceRatio: 0
+  CalibRotation: 0
+  smoothDistanceCurve: 0
+  smoothDistanceByTime: 0
+  timeSmoothBreakingDistanceChange: 100
+  smoothKernelSize: 21
+  timeSmoothFactor: 0
+  noiseLimit: 7
+  deltaLimit: 38
+  detectedObjects: []
+  distanceThresholdForMerge: 300
+  objectPositionSmoothTime: 0.2
+  positionOffset: {x: 0, y: 0}
+  useOffset: 1
+  debugDrawDistance: 0
+  drawObjectRays: 0
+  drawObjectCenterRay: 0
+  drawObject: 1
+  drawProcessedObject: 1
+  drawRunningLine: 0
+  showHardwareControlButtons: 0
+  recalculateConstrainAreaEveryFrame: 0
+  distanceColor: {r: 1, g: 1, b: 1, a: 1}
+  strengthColor: {r: 1, g: 0, b: 0, a: 1}
+  objectColor: {r: 0, g: 1, b: 0, a: 1}
+  processedObjectColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!1 &309344523
 GameObject:
   m_ObjectHideFlags: 0
