@@ -1,10 +1,12 @@
 using MongaLiDAR;
 using UnityEngine;
 
+
 public class LiDARTouchReceiver : MonoBehaviour, ITouchInputHandler
 {
     // 싱글턴 인스턴스
     public static LiDARTouchReceiver Instance { get; private set; }
+    
 
     private void Awake()
     {
@@ -19,6 +21,11 @@ public class LiDARTouchReceiver : MonoBehaviour, ITouchInputHandler
         }
     }
 
+    void Update()
+    {
+        
+    }
+
     // 터치 시작 이벤트
     public void OnTouchStart(Vector2 screenCoord, int lidarId, string objID)
     {
@@ -29,7 +36,7 @@ public class LiDARTouchReceiver : MonoBehaviour, ITouchInputHandler
     // 터치 종료 이벤트
     public void OnTouchEnd(Vector2 screenCoord, int lidarId, string objID)
     {
-        Debug.Log($"Touch ended at: {screenCoord} from LiDAR {lidarId} and ObjID {objID}");
+        //Debug.Log($"Touch ended at: {screenCoord} from LiDAR {lidarId} and ObjID {objID}");
         // 터치 종료 시의 행동을 정의 (예: 오브젝트 상호작용 종료 등)
     }
 }

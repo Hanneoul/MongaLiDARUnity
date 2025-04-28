@@ -26,6 +26,19 @@ namespace HKY
 
         private readonly Vector3[] cachedDirs;
 
+        public Vector2 getWonderPos(float ang, float distance, Vector2 mov)
+        {
+             
+
+            float angle = Vector3.Angle(cachedDirs[medianId], Vector3.right) + ang;
+            float theta = angle * Mathf.Deg2Rad;
+            float x = Mathf.Cos(theta) * medianDist * distance + mov.x;
+            float y = Mathf.Sin(theta) * medianDist * distance + mov.y;
+            return new Vector2(x, y);
+
+ 
+        }
+
         Vector2 _position = Vector2.zero;
         //position will be set once to save computing power
         bool positionSet = false;
@@ -96,6 +109,9 @@ namespace HKY
         Vector3 oldPosition;
         float posSmoothTime = 0.2f;
 
+        public Vector3 mongaaPosition { get; private set; }
+
+
         public ProcessedObject(Vector3 position, float size, float objectPositionSmoothTime = 0.2f)
         {
             guid = System.Guid.NewGuid();
@@ -105,7 +121,22 @@ namespace HKY
 
             currentVelocity = new Vector3();
             birthTime = Time.time;
+
         }
+
+        public ProcessedObject(Vector3 position, Vector2 Mongaa, float size, float objectPositionSmoothTime = 0.2f)
+        {
+            guid = System.Guid.NewGuid();
+            this.position = position;
+            this.size = size;
+            posSmoothTime = objectPositionSmoothTime;
+
+            currentVelocity = new Vector3();
+            birthTime = Time.time;
+
+            this.mongaaPosition = Mongaa;
+        }
+
 
         public static ProcessedObject Clone(ProcessedObject obj)
         {

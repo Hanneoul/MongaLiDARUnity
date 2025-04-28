@@ -34,6 +34,10 @@ namespace HKY
         public int deltaLimit;
         public string filterFileName;
         public int filter_calibrationSamples;
+
+        public Vector2 CalibCoord; 
+        public float CalibDistanceRatio; 
+        public float CalibRotation; 
     }
 
     [Serializable]
@@ -97,6 +101,11 @@ namespace HKY
         private List<List<long>> calibrationBuffer; // 환경 인식용 버퍼
         private int calibrationCount; // 현재까지 수집된 샘플 개수
         bool isFilterLoaded = false;
+
+        [Header("Coordinate Calibratioin Data")]
+        public Vector2 CalibCoord;
+        public float CalibDistanceRatio;
+        public float CalibRotation;
 
         [Header("Post Processing Distance Data")]
         [SerializeField] bool smoothDistanceCurve = false;
@@ -166,6 +175,10 @@ namespace HKY
             lidarData.filterFileName = filterFileName;
             lidarData.filter_calibrationSamples = filter_calibrationSamples;
 
+            lidarData.CalibCoord = CalibCoord;
+            lidarData.CalibRotation = CalibRotation;
+            lidarData.CalibDistanceRatio = CalibDistanceRatio;
+
             string json = JsonUtility.ToJson(lidarData);
             System.IO.File.WriteAllText(Application.dataPath + "/" + saveFileName, json);
             Debug.Log("Data saved to JSON: " + json);            
@@ -194,6 +207,10 @@ namespace HKY
 
                 filterFileName = lidarData.filterFileName;
                 filter_calibrationSamples = lidarData.filter_calibrationSamples;
+                
+                CalibCoord = lidarData.CalibCoord;
+                CalibRotation = lidarData.CalibRotation;
+                CalibDistanceRatio = lidarData.CalibDistanceRatio;
             }
             else
             {
@@ -604,6 +621,7 @@ namespace HKY
                 {
                     Filtering(croppedDistances, distanceConstrainList);
                     UpdateObjectList();
+
                 }
             }
         }
@@ -802,10 +820,11 @@ namespace HKY
                     {
                         var obj = detectedObjects[i];
                         //ES
-                        // LiDARTouchReceiver에 터치 시작 이벤트 전달
-                        //touchReceiver.OnTouchEnd(obj.position,lidar_id, obj.guid.ToString());
                         if (obj.clear)
                         {
+                            // LiDARTouchReceiver에 터치 시작 이벤트 전달
+                            touchReceiver.OnTouchEnd(obj.position, lidar_id, obj.guid.ToString());
+
                             detectedObjects.RemoveAt(i);
                             if (OnLostObject != null) { OnLostObject(obj); }
                         }
@@ -831,6 +850,8 @@ namespace HKY
                     {
                         var newbie = new ProcessedObject(obj.position, obj.size, objectPositionSmoothTime);
                         detectedObjects.Add(newbie);
+                        touchReceiver.OnTouchStart(newbie.position, lidar_id, newbie.guid.ToString());
+
                         //ES
                         // LiDARTouchReceiver에 터치 시작 이벤트 전달
                         //touchReceiver.OnTouchStart(newbie.position, lidar_id);
